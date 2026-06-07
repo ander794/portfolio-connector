@@ -5,5 +5,5 @@ services:
     name: portfolio-connector
     runtime: docker
     plan: free
-    healthCheckPath: /mcp
+    healthCheckPath: /healthz
     autoDeploy: true

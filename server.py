@@ -22,6 +22,33 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
+
+# --------------------------------------------------------------------------- #
+# Transport security (DNS-rebinding protection)
+# --------------------------------------------------------------------------- #
+# By default the Streamable HTTP transport only trusts a localhost Host header,
+# so a hosted deployment (e.g. portfolio-connector.onrender.com) gets rejected
+# with "Invalid Host header" / HTTP 421. DNS-rebinding protection primarily
+# guards *localhost-bound* dev servers, so for a public server behind a platform
+# TLS proxy we open it up. Set MCP_ALLOWED_HOSTS to harden:
+#   MCP_ALLOWED_HOSTS="portfolio-connector.onrender.com"  (comma-separated)
+
+
+def _transport_security() -> TransportSecuritySettings:
+    raw = os.environ.get("MCP_ALLOWED_HOSTS", "").strip()
+    if not raw or raw == "*":
+        # Open: accept any Host (works on Render, Cloudflare, tunnels, locally).
+        return TransportSecuritySettings(enable_dns_rebinding_protection=False)
+    hosts = {h.strip() for h in raw.split(",") if h.strip()}
+    hosts |= {"localhost", "127.0.0.1", "localhost:*", "127.0.0.1:*"}
+    origins = {f"https://{h}" for h in hosts if not h.startswith(("localhost", "127."))}
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=sorted(hosts),
+        allowed_origins=sorted(origins),
+    )
+
 
 # --------------------------------------------------------------------------- #
 # Server
@@ -35,6 +62,7 @@ mcp = FastMCP(
         "can expand to fullscreen. Call `list_portfolios` to enumerate available "
         "portfolios first if the user hasn't named one."
     ),
+    transport_security=_transport_security(),
 )
 
 # The ui:// scheme tells Claude this resource is an MCP App (interactive view).
@@ -225,6 +253,17 @@ def show_portfolio(portfolio_id: str = "growth") -> dict:
 # --------------------------------------------------------------------------- #
 
 app = mcp.streamable_http_app()
+
+
+# Lightweight health/landing routes so platform probes to "/" don't 404.
+async def _health(request):  # noqa: ANN001
+    from starlette.responses import JSONResponse
+
+    return JSONResponse({"status": "ok", "service": "portfolio-insights", "mcp": "/mcp"})
+
+
+app.add_route("/", _health, methods=["GET", "HEAD"])
+app.add_route("/healthz", _health, methods=["GET", "HEAD"])
 
 
 if __name__ == "__main__":

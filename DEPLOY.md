@@ -123,6 +123,24 @@ awake (Render free tier cold-starts), and you're on a paid Claude plan.
 
 ---
 
+## Troubleshooting
+
+**`Invalid Host header` / HTTP `421 Misdirected Request` in the logs.**
+The MCP transport's DNS-rebinding protection only trusts a `localhost` Host header
+by default, so it rejects your public hostname. `server.py` already handles this: it
+opens the Host allowlist unless you set `MCP_ALLOWED_HOSTS`. If you still see 421,
+you're running an older copy — **redeploy the latest `server.py`** (push to GitHub;
+Render auto-deploys). To re-harden once it works, set an env var on the host:
+```
+MCP_ALLOWED_HOSTS=portfolio-connector.onrender.com
+```
+(comma-separate multiple hosts; localhost is always allowed).
+
+**`HEAD / 404` in the logs.** Harmless — a platform probe hitting `/`. The server
+now answers `/` and `/healthz` with `200`, and `render.yaml` health-checks `/healthz`.
+
+---
+
 ## Cost summary
 
 | Item | Cost |
