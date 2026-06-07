@@ -69,6 +69,23 @@ switcher all work. This is a dev-only file; it isn't part of the deployed server
 
 **4. End-to-end in Claude** — tunnel + custom connector, see [DEPLOY.md](DEPLOY.md).
 
+## Editing the interactive view
+
+The view is built from `ui/` and **bundled into a single self-contained
+`views/portfolio.html`** (the official `@modelcontextprotocol/ext-apps` SDK is
+inlined — no CDN, so it renders inside Claude's CSP-sandboxed iframe). To change it:
+
+```bash
+cd ui
+npm install        # first time only
+# edit ui/src/mcp-app.js (logic) or ui/mcp-app.html (markup/CSS)
+npm run build      # regenerates ../views/portfolio.html
+```
+
+`views/portfolio.html` is the committed build output the server serves, so
+**deployment stays pure-Python** — Render just serves the bundled file, no Node
+build needed in the container. Only re-run `npm run build` when you edit the view.
+
 ## Make it real
 
 Replace the `PORTFOLIOS` dict and `_build_payload()` in `server.py` with calls to a

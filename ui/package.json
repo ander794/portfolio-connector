@@ -1,0 +1,16 @@
+{
+  "name": "portfolio-view",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "vite build && node -e \"require('fs').copyFileSync('dist/mcp-app.html','../views/portfolio.html')\""
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "latest"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "vite-plugin-singlefile": "^2.0.0"
+  }
+}

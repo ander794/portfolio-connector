@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Insights</title>
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #f6f7f9;
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted: #6b7280;
+        --accent: #6c5ce7;
+        --up: #12a150;
+        --down: #e5484d;
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1b1b1f; --surface: #26262b; --border: #34343a;
+          --text: #f3f4f6; --muted: #9ca3af; --up: #30c977; --down: #ff6369;
+        }
+      }
+      :root[data-theme="dark"] {
+        --bg: #1b1b1f; --surface: #26262b; --border: #34343a;
+        --text: #f3f4f6; --muted: #9ca3af; --up: #30c977; --down: #ff6369;
+      }
+      :root[data-theme="light"] {
+        --bg: #ffffff; --surface: #f6f7f9; --border: #e5e7eb;
+        --text: #111827; --muted: #6b7280; --up: #12a150; --down: #e5484d;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: var(--text); background: var(--bg); font-size: 14px; line-height: 1.45;
+      }
+      .wrap { padding: 16px; }
+
+      .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+      .name { font-size: 13px; color: var(--muted); margin: 0 0 2px; font-weight: 600;
+              text-transform: uppercase; letter-spacing: .04em; }
+      .value { font-size: 30px; font-weight: 700; margin: 0; letter-spacing: -.5px; }
+      .full .value { font-size: 38px; }
+      .pill { display: inline-flex; align-items: center; gap: 5px; font-weight: 600;
+              font-size: 13px; padding: 3px 9px; border-radius: 999px; margin-top: 6px; }
+      .pill.up { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); }
+      .pill.down { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); }
+
+      button.ghost {
+        border: 1px solid var(--border); background: var(--surface); color: var(--text);
+        border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 600;
+        cursor: pointer; white-space: nowrap;
+      }
+      button.ghost:hover { border-color: var(--accent); }
+
+      .spark { width: 100%; height: 56px; margin: 14px 0 6px; display: block; }
+      .full .spark { height: 120px; }
+
+      .rows { margin-top: 10px; }
+      .row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px;
+             align-items: center; padding: 9px 0; border-top: 1px solid var(--border); }
+      .row:first-child { border-top: none; }
+      .tkr { font-weight: 700; }
+      .sub { color: var(--muted); font-size: 12px; }
+      .num { text-align: right; font-variant-numeric: tabular-nums; }
+      .chg { text-align: right; font-variant-numeric: tabular-nums; min-width: 64px; font-weight: 600; }
+      .chg.up { color: var(--up); }
+      .chg.down { color: var(--down); }
+
+      .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+      .tab { border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+             border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+      .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+      .card { background: var(--surface); border: 1px solid var(--border);
+              border-radius: var(--radius); padding: 16px; }
+      .card h3 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase;
+                 letter-spacing: .04em; color: var(--muted); }
+      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 4px; }
+      .stat .k { color: var(--muted); font-size: 12px; }
+      .stat .v { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: right; color: var(--muted); font-size: 12px; font-weight: 600;
+           padding: 6px 8px; border-bottom: 1px solid var(--border); }
+      th:first-child { text-align: left; }
+      td { padding: 9px 8px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
+           text-align: right; }
+      td:first-child { text-align: left; }
+
+      .alloc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .alloc-row .lbl { width: 120px; font-size: 13px; }
+      .bar { flex: 1; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
+      .bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+      .alloc-row .pct { width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+      .asof { color: var(--muted); font-size: 11px; margin-top: 14px; }
+      .loading { color: var(--muted); padding: 28px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="wrap"><div class="loading">Loading portfolio…</div></div>
+    <script type="module" src="/src/mcp-app.js"></script>
+  </body>
+</html>

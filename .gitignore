@@ -1,0 +1,11 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# UI build (the bundled output is committed at views/portfolio.html)
+ui/node_modules/
+ui/dist/
+
+# Dev scaffolding
+index.html
