@@ -68,7 +68,9 @@ mcp = FastMCP(
 )
 
 # The ui:// scheme tells Claude this resource is an MCP App (interactive view).
-VIEW_URI = "ui://portfolio-insights/portfolio.html"
+# NOTE: bump the version in this path whenever the HTML changes — hosts cache the
+# resource by URI, so a new path forces Claude to fetch the fresh view.
+VIEW_URI = "ui://portfolio-insights/portfolio-v2.html"
 
 # Load the embedded view once at startup.
 EMBEDDED_VIEW_HTML = (Path(__file__).parent / "views" / "portfolio.html").read_text(
