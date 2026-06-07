@@ -21,6 +21,8 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 
+from pydantic import BaseModel
+
 from mcp.server.fastmcp import FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 
@@ -202,6 +204,55 @@ def portfolio_view() -> str:
 
 
 # --------------------------------------------------------------------------- #
+# Typed output models
+# --------------------------------------------------------------------------- #
+# A typed return value is REQUIRED for FastMCP to emit `structuredContent` in the
+# tool result. Claude only mounts the MCP App (interactive view) when the result
+# carries structuredContent; with a plain `dict` return it ships text only and the
+# view never renders. These models mirror the shape built by `_build_payload`.
+
+
+class Holding(BaseModel):
+    ticker: str
+    name: str
+    sector: str
+    shares: float
+    price: float
+    value: float
+    costBasis: float
+    dayChangePct: float
+    gainPct: float
+    gainValue: float
+    weight: float = 0.0
+
+
+class Allocation(BaseModel):
+    sector: str
+    weight: float
+
+
+class AvailablePortfolio(BaseModel):
+    id: str
+    name: str
+
+
+class Portfolio(BaseModel):
+    id: str
+    name: str
+    currency: str
+    asOf: str
+    totalValue: float
+    dayChange: float
+    dayChangePct: float
+    totalGain: float
+    totalGainPct: float
+    sparkline: list[float]
+    holdings: list[Holding]
+    allocation: list[Allocation]
+    available: list[AvailablePortfolio]
+
+
+# --------------------------------------------------------------------------- #
 # Tools
 # --------------------------------------------------------------------------- #
 
@@ -234,7 +285,7 @@ def list_portfolios() -> dict:
         "ui/resourceUri": VIEW_URI,  # legacy key, kept for older hosts
     }
 )
-def show_portfolio(portfolio_id: str = "growth") -> dict:
+def show_portfolio(portfolio_id: str = "growth") -> Portfolio:
     """Show an interactive financial overview of a portfolio.
 
     Renders an embedded card (total value, day change, top holdings, sparkline)
@@ -245,7 +296,7 @@ def show_portfolio(portfolio_id: str = "growth") -> dict:
     if portfolio_id not in PORTFOLIOS:
         valid = ", ".join(PORTFOLIOS)
         raise ValueError(f"Unknown portfolio '{portfolio_id}'. Available: {valid}")
-    return _build_payload(portfolio_id)
+    return Portfolio.model_validate(_build_payload(portfolio_id))
 
 
 # --------------------------------------------------------------------------- #

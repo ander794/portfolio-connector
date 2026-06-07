@@ -139,6 +139,18 @@ MCP_ALLOWED_HOSTS=portfolio-connector.onrender.com
 **`HEAD / 404` in the logs.** Harmless — a platform probe hitting `/`. The server
 now answers `/` and `/healthz` with `200`, and `render.yaml` health-checks `/healthz`.
 
+**Tool runs but the interactive view doesn't render (Claude shows only the data).**
+Claude mounts the MCP App view only when the tool result includes `structuredContent`.
+FastMCP emits that **only for typed return values** — a tool annotated `-> dict`
+ships text-only and the view never appears. `show_portfolio` returns a Pydantic
+`Portfolio` model so `structuredContent` is present. After deploying, **remove and
+re-add the connector** in Claude so it refreshes the tool schema (`outputSchema`)
+and `_meta.ui.resourceUri`.
+
+**`Couldn't register with … sign-in service` when adding the connector.** Expected
+for an auth-less server — Claude probes for OAuth, finds none, and connects without
+sign-in. Leave the OAuth Client ID blank; the tools still work.
+
 ---
 
 ## Cost summary
