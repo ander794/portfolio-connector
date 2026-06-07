@@ -15,6 +15,9 @@
         --up: #12a150;
         --down: #e5484d;
         --radius: 14px;
+        /* Host safe-area insets (e.g. fullscreen header + composer). Set from
+           hostContext.safeAreaInsets at runtime; default 0 for inline. */
+        --safe-top: 0px; --safe-right: 0px; --safe-bottom: 0px; --safe-left: 0px;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -36,7 +39,10 @@
         font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
         color: var(--text); background: var(--bg); font-size: 14px; line-height: 1.45;
       }
-      .wrap { padding: 16px; }
+      .wrap {
+        padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right))
+                 calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
+      }
 
       .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
       .name { font-size: 13px; color: var(--muted); margin: 0 0 2px; font-weight: 600;
@@ -107,7 +113,10 @@
       /* ---- mobile ---- */
       @media (max-width: 560px) {
         html, body { overflow-x: hidden; }
-        .wrap { padding: 12px; }
+        .wrap {
+          padding: calc(12px + var(--safe-top)) calc(12px + var(--safe-right))
+                   calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+        }
         .value { font-size: 26px; }
         .full .value { font-size: 30px; }
         .head { gap: 8px; }
@@ -116,7 +125,9 @@
         .grid2 { gap: 14px; }
         .card { padding: 13px; }
         .card h3 { margin-bottom: 8px; }
-        th, td { padding: 8px 6px; font-size: 12.5px; }
+        th, td { padding: 7px 4px; font-size: 12px; }
+        th:first-child, td:first-child { padding-left: 0; }
+        th:last-child, td:last-child { padding-right: 0; }
         /* Hide Shares + Price so the key columns (Value/Weight/Day/Total) fit
            without horizontal scrolling. Full detail is available in the chat data. */
         th:nth-child(2), td:nth-child(2),

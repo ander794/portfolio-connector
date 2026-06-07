@@ -158,9 +158,19 @@ const app = new App({ name: "Portfolio Insights", version: "1.0.0" });
 
 function applyContext(ctx) {
   if (!ctx) return;
+  const rootStyle = document.documentElement.style;
   if (ctx.theme) document.documentElement.dataset.theme = ctx.theme;
   const vars = ctx.styles && ctx.styles.variables;
-  if (vars) for (const [k, v] of Object.entries(vars)) document.documentElement.style.setProperty(k, v);
+  if (vars) for (const [k, v] of Object.entries(vars)) rootStyle.setProperty(k, v);
+  // Pad around the host's chrome (fullscreen header + composer) so content
+  // isn't hidden underneath it.
+  const ins = ctx.safeAreaInsets;
+  if (ins) {
+    rootStyle.setProperty("--safe-top", (ins.top || 0) + "px");
+    rootStyle.setProperty("--safe-right", (ins.right || 0) + "px");
+    rootStyle.setProperty("--safe-bottom", (ins.bottom || 0) + "px");
+    rootStyle.setProperty("--safe-left", (ins.left || 0) + "px");
+  }
   if (ctx.displayMode) state.mode = ctx.displayMode;
 }
 

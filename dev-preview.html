@@ -61,6 +61,10 @@
               theme: host.theme,
               displayMode: host.mode,
               availableDisplayModes: ["inline", "fullscreen"],
+              // Simulate Claude's fullscreen chrome (header + bottom composer).
+              safeAreaInsets: host.mode === "fullscreen"
+                ? { top: 64, right: 0, bottom: 96, left: 0 }
+                : { top: 0, right: 0, bottom: 0, left: 0 },
             },
           });
         } else if (msg.method === "ui/notifications/initialized") {
@@ -70,6 +74,7 @@
           host.mode = msg.params.mode;
           setStage(host.mode);
           result(msg.id, { mode: host.mode });
+          notify("ui/notifications/host-context-changed", { displayMode: host.mode, safeAreaInsets: insetsFor(host.mode) });
         } else if (msg.method === "tools/call") {
           if (msg.params.name === "show_portfolio") {
             host.current = (msg.params.arguments && msg.params.arguments.portfolio_id) || "growth";
@@ -92,11 +97,18 @@
       }
 
       // Top buttons simulate the host changing the display mode.
+      function insetsFor(mode) {
+        return mode === "fullscreen"
+          ? { top: 64, right: 0, bottom: 96, left: 0 }
+          : { top: 0, right: 0, bottom: 0, left: 0 };
+      }
       document.getElementById("b-inline").onclick = () => {
-        setStage("inline"); notify("ui/notifications/host-context-changed", { displayMode: "inline" });
+        setStage("inline");
+        notify("ui/notifications/host-context-changed", { displayMode: "inline", safeAreaInsets: insetsFor("inline") });
       };
       document.getElementById("b-full").onclick = () => {
-        setStage("fullscreen"); notify("ui/notifications/host-context-changed", { displayMode: "fullscreen" });
+        setStage("fullscreen");
+        notify("ui/notifications/host-context-changed", { displayMode: "fullscreen", safeAreaInsets: insetsFor("fullscreen") });
       };
 
       // Load the real view unmodified.

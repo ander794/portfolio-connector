@@ -15,6 +15,9 @@
         --up: #12a150;
         --down: #e5484d;
         --radius: 14px;
+        /* Host safe-area insets (e.g. fullscreen header + composer). Set from
+           hostContext.safeAreaInsets at runtime; default 0 for inline. */
+        --safe-top: 0px; --safe-right: 0px; --safe-bottom: 0px; --safe-left: 0px;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -36,7 +39,10 @@
         font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
         color: var(--text); background: var(--bg); font-size: 14px; line-height: 1.45;
       }
-      .wrap { padding: 16px; }
+      .wrap {
+        padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right))
+                 calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
+      }
 
       .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
       .name { font-size: 13px; color: var(--muted); margin: 0 0 2px; font-weight: 600;
@@ -107,7 +113,10 @@
       /* ---- mobile ---- */
       @media (max-width: 560px) {
         html, body { overflow-x: hidden; }
-        .wrap { padding: 12px; }
+        .wrap {
+          padding: calc(12px + var(--safe-top)) calc(12px + var(--safe-right))
+                   calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+        }
         .value { font-size: 26px; }
         .full .value { font-size: 30px; }
         .head { gap: 8px; }
@@ -116,7 +125,9 @@
         .grid2 { gap: 14px; }
         .card { padding: 13px; }
         .card h3 { margin-bottom: 8px; }
-        th, td { padding: 8px 6px; font-size: 12.5px; }
+        th, td { padding: 7px 4px; font-size: 12px; }
+        th:first-child, td:first-child { padding-left: 0; }
+        th:last-child, td:last-child { padding-right: 0; }
         /* Hide Shares + Price so the key columns (Value/Weight/Day/Total) fit
            without horizontal scrolling. Full detail is available in the chat data. */
         th:nth-child(2), td:nth-child(2),
@@ -304,7 +315,7 @@ container holding the app. Specify either width or maxWidth, and either height o
         ${o}
       </div>
     </div>
-    <div class="asof">As of ${new Date(t.asOf).toLocaleString()} · sample data</div>`}function wn(){if(!pe.data)return;const t=pe.mode==="fullscreen";jn.className="wrap"+(t?" full":""),jn.innerHTML=t?m$(pe.data):d$(pe.data);const n=document.getElementById("expand");n&&(n.onclick=()=>Us("fullscreen"));const r=document.getElementById("collapse");r&&(r.onclick=()=>Us("inline")),jn.querySelectorAll(".tab").forEach(o=>{o.onclick=async()=>{const e=o.getAttribute("data-pid");e!==pe.data.id&&(o.textContent="Loading…",await p$(e))}})}function hm(t){if(!t)return null;if(t.structuredContent)return t.structuredContent;const n=t.content&&t.content.find(r=>r.type==="text");if(n&&n.text)try{return JSON.parse(n.text)}catch{}return null}const Ye=new ti({name:"Portfolio Insights",version:"1.0.0"});function $m(t){if(!t)return;t.theme&&(document.documentElement.dataset.theme=t.theme);const n=t.styles&&t.styles.variables;if(n)for(const[r,o]of Object.entries(n))document.documentElement.style.setProperty(r,o);t.displayMode&&(pe.mode=t.displayMode)}async function Us(t){try{const n=await Ye.requestDisplayMode({mode:t});pe.mode=n&&n.mode||t}catch{pe.mode=t}wn()}async function p$(t){const n=await Ye.callServerTool({name:"show_portfolio",arguments:{portfolio_id:t}}),r=hm(n);r&&(pe.data=r,wn())}Ye.ontoolresult=t=>{const n=hm(t);n&&(pe.data=n,wn())};Ye.onhostcontextchanged=t=>{$m(t),wn()};Ye.connect().then(()=>{$m(Ye.getHostContext()),wn()}).catch(()=>{jn.innerHTML='<div class="loading">Couldn’t connect to host.</div>'});</script>
+    <div class="asof">As of ${new Date(t.asOf).toLocaleString()} · sample data</div>`}function wn(){if(!pe.data)return;const t=pe.mode==="fullscreen";jn.className="wrap"+(t?" full":""),jn.innerHTML=t?m$(pe.data):d$(pe.data);const n=document.getElementById("expand");n&&(n.onclick=()=>Us("fullscreen"));const r=document.getElementById("collapse");r&&(r.onclick=()=>Us("inline")),jn.querySelectorAll(".tab").forEach(o=>{o.onclick=async()=>{const e=o.getAttribute("data-pid");e!==pe.data.id&&(o.textContent="Loading…",await p$(e))}})}function hm(t){if(!t)return null;if(t.structuredContent)return t.structuredContent;const n=t.content&&t.content.find(r=>r.type==="text");if(n&&n.text)try{return JSON.parse(n.text)}catch{}return null}const Ye=new ti({name:"Portfolio Insights",version:"1.0.0"});function $m(t){if(!t)return;const n=document.documentElement.style;t.theme&&(document.documentElement.dataset.theme=t.theme);const r=t.styles&&t.styles.variables;if(r)for(const[e,i]of Object.entries(r))n.setProperty(e,i);const o=t.safeAreaInsets;o&&(n.setProperty("--safe-top",(o.top||0)+"px"),n.setProperty("--safe-right",(o.right||0)+"px"),n.setProperty("--safe-bottom",(o.bottom||0)+"px"),n.setProperty("--safe-left",(o.left||0)+"px")),t.displayMode&&(pe.mode=t.displayMode)}async function Us(t){try{const n=await Ye.requestDisplayMode({mode:t});pe.mode=n&&n.mode||t}catch{pe.mode=t}wn()}async function p$(t){const n=await Ye.callServerTool({name:"show_portfolio",arguments:{portfolio_id:t}}),r=hm(n);r&&(pe.data=r,wn())}Ye.ontoolresult=t=>{const n=hm(t);n&&(pe.data=n,wn())};Ye.onhostcontextchanged=t=>{$m(t),wn()};Ye.connect().then(()=>{$m(Ye.getHostContext()),wn()}).catch(()=>{jn.innerHTML='<div class="loading">Couldn’t connect to host.</div>'});</script>
   </head>
   <body>
     <div id="root" class="wrap"><div class="loading">Loading portfolio…</div></div>
