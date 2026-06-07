@@ -28,6 +28,15 @@
           --down: #ff6369;
         }
       }
+      /* Explicit theme from the host (overrides OS preference). */
+      :root[data-theme="dark"] {
+        --bg: #1b1b1f; --surface: #26262b; --border: #34343a;
+        --text: #f3f4f6; --muted: #9ca3af; --up: #30c977; --down: #ff6369;
+      }
+      :root[data-theme="light"] {
+        --bg: #ffffff; --surface: #f6f7f9; --border: #e5e7eb;
+        --text: #111827; --muted: #6b7280; --up: #12a150; --down: #e5484d;
+      }
       * { box-sizing: border-box; }
       html, body { margin: 0; height: 100%; }
       body {
@@ -110,10 +119,9 @@
   <body>
     <div id="root" class="wrap"><div class="loading">Loading portfolio…</div></div>
 
-    <script type="module">
-      import { App } from "https://esm.sh/@modelcontextprotocol/ext-apps";
-
-      const app = new App({ name: "Portfolio Insights", version: "1.0.0" });
+    <script>
+      // Self-contained: no external imports (Claude's sandbox CSP blocks CDN loads).
+      // We speak the MCP Apps postMessage/JSON-RPC protocol to the host directly.
       const root = document.getElementById("root");
 
       const state = { data: null, mode: "inline" };
@@ -242,9 +250,9 @@
         root.innerHTML = full ? renderFull(state.data) : renderInline(state.data);
 
         const expand = document.getElementById("expand");
-        if (expand) expand.onclick = () => app.requestDisplayMode({ mode: "fullscreen" });
+        if (expand) expand.onclick = () => requestDisplayMode("fullscreen");
         const collapse = document.getElementById("collapse");
-        if (collapse) collapse.onclick = () => app.requestDisplayMode({ mode: "inline" });
+        if (collapse) collapse.onclick = () => requestDisplayMode("inline");
 
         root.querySelectorAll(".tab").forEach((t) => {
           t.onclick = async () => {
@@ -266,30 +274,84 @@
       }
 
       async function loadPortfolio(pid) {
-        const result = await app.callServerTool({
-          name: "show_portfolio",
-          arguments: { portfolio_id: pid },
-        });
+        const result = await callServerTool("show_portfolio", { portfolio_id: pid });
         const data = payloadFrom(result);
         if (data) { state.data = data; render(); }
       }
 
-      // ---- wire up host events ---------------------------------------------
-      app.ontoolresult = (result) => {
-        const data = payloadFrom(result);
-        if (data) { state.data = data; render(); }
-      };
+      // ---- minimal MCP Apps host bridge (vanilla postMessage, no deps) ------
+      let reqSeq = 1;
+      const pending = new Map();
 
-      app.onhostcontextchanged = (ctx) => {
-        if (ctx?.displayMode) { state.mode = ctx.displayMode; render(); }
-      };
+      function notify(method, params) {
+        window.parent.postMessage({ jsonrpc: "2.0", method, params: params || {} }, "*");
+      }
+      function request(method, params) {
+        const id = reqSeq++;
+        return new Promise((resolve, reject) => {
+          pending.set(id, { resolve, reject });
+          window.parent.postMessage({ jsonrpc: "2.0", id, method, params: params || {} }, "*");
+        });
+      }
 
-      app.connect().then(() => {
-        try {
-          const ctx = app.getHostContext?.();
-          if (ctx?.displayMode) { state.mode = ctx.displayMode; render(); }
-        } catch { /* host may not expose context yet */ }
+      function applyContext(ctx) {
+        if (!ctx) return;
+        if (ctx.theme) document.documentElement.dataset.theme = ctx.theme;
+        const vars = ctx.styles && ctx.styles.variables;
+        if (vars) for (const [k, v] of Object.entries(vars)) {
+          document.documentElement.style.setProperty(k, v);
+        }
+        if (ctx.displayMode) state.mode = ctx.displayMode;
+      }
+
+      window.addEventListener("message", (event) => {
+        const msg = event.data;
+        if (!msg || msg.jsonrpc !== "2.0") return;
+        // responses to our requests
+        if (msg.id !== undefined && (msg.result !== undefined || msg.error !== undefined)) {
+          const p = pending.get(msg.id);
+          if (p) { pending.delete(msg.id); msg.error ? p.reject(msg.error) : p.resolve(msg.result); }
+          return;
+        }
+        // notifications from the host
+        switch (msg.method) {
+          case "ui/notifications/tool-result": {
+            const data = payloadFrom(msg.params);
+            if (data) { state.data = data; render(); }
+            break;
+          }
+          case "ui/notifications/host-context-changed":
+            applyContext(msg.params); render();
+            break;
+        }
       });
+
+      async function requestDisplayMode(mode) {
+        try {
+          const res = await request("ui/request-display-mode", { mode });
+          state.mode = (res && res.mode) || mode;
+        } catch { state.mode = mode; }
+        render();
+      }
+
+      function callServerTool(name, args) {
+        return request("tools/call", { name, arguments: args || {} });
+      }
+
+      // ---- boot: run the initialize handshake ------------------------------
+      (async () => {
+        try {
+          const result = await request("ui/initialize", {
+            appInfo: { name: "Portfolio Insights", version: "1.0.0" },
+            appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] },
+          });
+          applyContext(result && result.hostContext);
+          notify("ui/notifications/initialized", {});
+          render();
+        } catch (err) {
+          root.innerHTML = '<div class="loading">Couldn’t connect to host.</div>';
+        }
+      })();
     </script>
   </body>
 </html>

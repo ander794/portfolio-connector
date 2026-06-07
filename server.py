@@ -195,8 +195,7 @@ def _build_payload(portfolio_id: str) -> dict:
 @mcp.resource(
     VIEW_URI,
     mime_type="text/html;profile=mcp-app",
-    # CSP: allow loading the ext-apps client from esm.sh inside the sandbox.
-    meta={"ui": {"csp": {"resourceDomains": ["https://esm.sh"]}}},
+    # Fully self-contained HTML (no external scripts), so no CSP exceptions needed.
 )
 def portfolio_view() -> str:
     """The interactive portfolio view rendered inline / fullscreen by Claude."""

@@ -6,19 +6,16 @@
     <style>
       body { margin: 0; font-family: ui-sans-serif, -apple-system, sans-serif; background: #0e0e11; color: #eee; }
       .bar { display: flex; gap: 8px; align-items: center; padding: 12px 16px; background: #17171c;
-             border-bottom: 1px solid #2a2a31; position: sticky; top: 0; }
+             border-bottom: 1px solid #2a2a31; position: sticky; top: 0; z-index: 2; }
       .bar b { font-size: 13px; margin-right: 8px; }
       .bar button { background: #26262d; color: #eee; border: 1px solid #3a3a44; border-radius: 8px;
                     padding: 6px 12px; font-size: 13px; cursor: pointer; }
       .bar button.on { background: #6c5ce7; border-color: #6c5ce7; }
       .bar .note { margin-left: auto; color: #888; font-size: 12px; }
       .stage { display: flex; justify-content: center; padding: 28px 16px; }
-      /* Inline: render in a chat-bubble-sized card like Claude shows it. */
-      .stage.inline iframe { width: 460px; height: 360px; border: 1px solid #2a2a31; border-radius: 16px; background:#fff; }
-      /* Fullscreen: expand like Claude's fullscreen view. */
+      .stage.inline iframe { width: 460px; height: 360px; border: 1px solid #2a2a31; border-radius: 16px; background:#1b1b1f; }
       .stage.fullscreen { padding: 0; }
-      .stage.fullscreen iframe { width: 100%; height: calc(100vh - 53px); border: 0; background:#fff; }
-      iframe { color-scheme: light; }
+      .stage.fullscreen iframe { width: 100%; height: calc(100vh - 53px); border: 0; background:#1b1b1f; }
     </style>
   </head>
   <body>
@@ -26,82 +23,80 @@
       <b>Display mode:</b>
       <button id="b-inline" class="on">Inline card</button>
       <button id="b-full">Fullscreen</button>
-      <span class="note">Mocked host bridge + real sample data — the Expand/Minimize buttons inside the view also work.</span>
+      <span class="note">This page acts as a real MCP-Apps host (postMessage/JSON-RPC) — no SDK, same protocol Claude uses.</span>
     </div>
     <div id="stage" class="stage inline"><iframe id="frame" title="view"></iframe></div>
 
-    <script type="module">
+    <script>
       // Real payloads exported from server.py (_build_payload).
       const PAYLOADS = {"growth": {"id": "growth", "name": "Growth Portfolio", "currency": "USD", "asOf": "2026-06-07T08:04:26+00:00", "totalValue": 92070.55, "dayChange": 382.53, "dayChangePct": 0.42, "totalGain": 31137.65, "totalGainPct": 51.1, "sparkline": [112.1, 113.4, 111.9, 114.8, 116.2, 115.0, 117.6, 119.1, 118.3, 120.9, 122.4, 121.0, 123.8, 125.1, 124.0, 126.7, 128.0, 127.2, 129.9, 131.1, 130.0, 132.6, 134.2, 133.1, 135.8, 137.0, 136.1, 138.9, 140.2, 141.5], "holdings": [{"ticker": "AAPL", "name": "Apple Inc.", "sector": "Technology", "shares": 120, "price": 214.3, "value": 25716.0, "costBasis": 151.2, "dayChangePct": 0.82, "gainPct": 41.73, "gainValue": 7572.0, "weight": 27.9}, {"ticker": "MSFT", "name": "Microsoft Corp.", "sector": "Technology", "shares": 45, "price": 472.55, "value": 21264.75, "costBasis": 305.1, "dayChangePct": 0.34, "gainPct": 54.88, "gainValue": 7535.25, "weight": 23.1}, {"ticker": "LLY", "name": "Eli Lilly & Co.", "sector": "Healthcare", "shares": 18, "price": 902.1, "value": 16237.8, "costBasis": 612.3, "dayChangePct": 1.12, "gainPct": 47.33, "gainValue": 5216.4, "weight": 17.6}, {"ticker": "AMZN", "name": "Amazon.com Inc.", "sector": "Consumer Disc.", "shares": 50, "price": 219.8, "value": 10990.0, "costBasis": 138.0, "dayChangePct": -0.61, "gainPct": 59.28, "gainValue": 4090.0, "weight": 11.9}, {"ticker": "TSLA", "name": "Tesla Inc.", "sector": "Consumer Disc.", "shares": 40, "price": 248.4, "value": 9936.0, "costBasis": 205.7, "dayChangePct": -1.95, "gainPct": 20.76, "gainValue": 1708.0, "weight": 10.8}, {"ticker": "NVDA", "name": "NVIDIA Corp.", "sector": "Technology", "shares": 60, "price": 132.1, "value": 7926.0, "costBasis": 48.5, "dayChangePct": 2.41, "gainPct": 172.37, "gainValue": 5016.0, "weight": 8.6}], "allocation": [{"sector": "Technology", "weight": 59.6}, {"sector": "Consumer Disc.", "weight": 22.7}, {"sector": "Healthcare", "weight": 17.6}], "available": [{"id": "growth", "name": "Growth Portfolio"}, {"id": "income", "name": "Dividend Income"}]}, "income": {"id": "income", "name": "Dividend Income", "currency": "USD", "asOf": "2026-06-07T08:04:26+00:00", "totalValue": 68482.0, "dayChange": 187.41, "dayChangePct": 0.27, "totalGain": 6346.0, "totalGainPct": 10.21, "sparkline": [98.0, 98.4, 98.1, 99.0, 99.3, 99.1, 99.8, 100.2, 100.0, 100.6, 100.9, 100.5, 101.2, 101.6, 101.3, 101.9, 102.1, 101.8, 102.4, 102.7, 102.5, 103.0, 103.3, 103.1, 103.7, 104.0, 103.8, 104.3, 104.6, 104.9], "holdings": [{"ticker": "PG", "name": "Procter & Gamble", "sector": "Consumer Staples", "shares": 90, "price": 168.9, "value": 15201.0, "costBasis": 142.1, "dayChangePct": 0.12, "gainPct": 18.86, "gainValue": 2412.0, "weight": 22.2}, {"ticker": "KO", "name": "Coca-Cola Co.", "sector": "Consumer Staples", "shares": 200, "price": 70.1, "value": 14020.0, "costBasis": 58.3, "dayChangePct": 0.45, "gainPct": 20.24, "gainValue": 2360.0, "weight": 20.5}, {"ticker": "XOM", "name": "Exxon Mobil", "sector": "Energy", "shares": 110, "price": 118.7, "value": 13057.0, "costBasis": 96.5, "dayChangePct": 0.74, "gainPct": 23.01, "gainValue": 2442.0, "weight": 19.1}, {"ticker": "JNJ", "name": "Johnson & Johnson", "sector": "Healthcare", "shares": 80, "price": 158.2, "value": 12656.0, "costBasis": 149.4, "dayChangePct": 0.21, "gainPct": 5.89, "gainValue": 704.0, "weight": 18.5}, {"ticker": "O", "name": "Realty Income", "sector": "Real Estate", "shares": 120, "price": 58.4, "value": 7008.0, "costBasis": 62.0, "dayChangePct": 0.08, "gainPct": -5.81, "gainValue": -432.0, "weight": 10.2}, {"ticker": "VZ", "name": "Verizon Comms.", "sector": "Communications", "shares": 150, "price": 43.6, "value": 6540.0, "costBasis": 51.2, "dayChangePct": -0.33, "gainPct": -14.84, "gainValue": -1140.0, "weight": 9.5}], "allocation": [{"sector": "Consumer Staples", "weight": 42.7}, {"sector": "Energy", "weight": 19.1}, {"sector": "Healthcare", "weight": 18.5}, {"sector": "Real Estate", "weight": 10.2}, {"sector": "Communications", "weight": 9.5}], "available": [{"id": "growth", "name": "Growth Portfolio"}, {"id": "income", "name": "Dividend Income"}]}};
 
-      // A mock of the @modelcontextprotocol/ext-apps `App` class, delivered to the
-      // view via an import map so views/portfolio.html runs UNMODIFIED.
-      const MOCK_APP_SRC = `
-        export class App {
-          constructor(info) { this.info = info; this.ontoolresult = null;
-            this.onhostcontextchanged = null; this.ontoolinput = null; this.onteardown = null; }
-          getHostContext() { return { displayMode: window.__MODE__ || "inline",
-            availableDisplayModes: ["inline","fullscreen"], theme: "light" }; }
-          async connect() {
-            queueMicrotask(() => {
-              // Real hosts push their context (incl. displayMode) before/with the result.
-              this.onhostcontextchanged && this.onhostcontextchanged(this.getHostContext());
-              this.ontoolresult &&
-                this.ontoolresult({ structuredContent: window.__PAYLOADS__[window.__CURRENT__ || "growth"] });
-            });
-            return {};
-          }
-          async callServerTool({ name, arguments: args }) {
-            if (name === "show_portfolio") {
-              const id = (args && args.portfolio_id) || "growth";
-              window.__CURRENT__ = id;
-              return { structuredContent: window.__PAYLOADS__[id] };
-            }
-            return {};
-          }
-          requestDisplayMode({ mode }) {
-            window.__MODE__ = mode;
-            this.onhostcontextchanged && this.onhostcontextchanged({ displayMode: mode });
-            window.parent.postMessage({ __harness: true, mode }, "*");
-            return {};
-          }
-          log() {} sendOpenLink() {} updateModelContext() {} sendMessage() {}
-        }`;
-      const mockUrl = "data:text/javascript;base64," + btoa(MOCK_APP_SRC);
-
+      const host = { mode: "inline", current: "growth", theme: "dark" };
       const frame = document.getElementById("frame");
       const stage = document.getElementById("stage");
-      let viewHtml = null;
 
-      async function loadView(mode) {
-        if (!viewHtml) viewHtml = await (await fetch("views/portfolio.html")).text();
-        const inject = `
-          <script>
-            window.__PAYLOADS__ = ${JSON.stringify(PAYLOADS)};
-            window.__MODE__ = ${JSON.stringify(mode)};
-            window.__CURRENT__ = "growth";
-          <\/script>
-          <script type="importmap">
-            { "imports": { "https://esm.sh/@modelcontextprotocol/ext-apps": ${JSON.stringify(mockUrl)} } }
-          <\/script>`;
-        frame.srcdoc = viewHtml.replace(/<head>/i, "<head>" + inject);
-        setMode(mode);
+      function toIframe(msg) { frame.contentWindow.postMessage(msg, "*"); }
+      function result(id, res) { toIframe({ jsonrpc: "2.0", id, result: res }); }
+      function notify(method, params) { toIframe({ jsonrpc: "2.0", method, params }); }
+
+      function toolResult(pid) {
+        const p = PAYLOADS[pid];
+        return {
+          content: [{ type: "text", text: JSON.stringify(p) }],
+          structuredContent: p,
+        };
       }
 
-      function setMode(mode) {
+      // Host side of the MCP-Apps protocol.
+      window.addEventListener("message", (event) => {
+        const msg = event.data;
+        if (!msg || msg.jsonrpc !== "2.0" || event.source !== frame.contentWindow) return;
+
+        if (msg.method === "ui/initialize") {
+          result(msg.id, {
+            protocolVersion: "2025-06-18",
+            hostInfo: { name: "Local Harness", version: "1.0.0" },
+            hostCapabilities: { serverTools: {}, openLinks: {} },
+            hostContext: {
+              theme: host.theme,
+              displayMode: host.mode,
+              availableDisplayModes: ["inline", "fullscreen"],
+            },
+          });
+        } else if (msg.method === "ui/notifications/initialized") {
+          // Push the first tool result, just like a host delivers it after a tool call.
+          notify("ui/notifications/tool-result", toolResult(host.current));
+        } else if (msg.method === "ui/request-display-mode") {
+          host.mode = msg.params.mode;
+          setStage(host.mode);
+          result(msg.id, { mode: host.mode });
+        } else if (msg.method === "tools/call") {
+          if (msg.params.name === "show_portfolio") {
+            host.current = (msg.params.arguments && msg.params.arguments.portfolio_id) || "growth";
+            result(msg.id, toolResult(host.current));
+          } else {
+            result(msg.id, { content: [], structuredContent: null });
+          }
+        }
+      });
+
+      function setStage(mode) {
+        host.mode = mode;
         stage.className = "stage " + mode;
         document.getElementById("b-inline").classList.toggle("on", mode === "inline");
         document.getElementById("b-full").classList.toggle("on", mode === "fullscreen");
       }
 
-      document.getElementById("b-inline").onclick = () => loadView("inline");
-      document.getElementById("b-full").onclick = () => loadView("fullscreen");
-      // The view's own Expand/Minimize buttons post back through the mock bridge.
-      window.addEventListener("message", (e) => {
-        if (e.data && e.data.__harness) setMode(e.data.mode);
-      });
+      // Top buttons simulate the host changing the display mode.
+      document.getElementById("b-inline").onclick = () => {
+        setStage("inline"); notify("ui/notifications/host-context-changed", { displayMode: "inline" });
+      };
+      document.getElementById("b-full").onclick = () => {
+        setStage("fullscreen"); notify("ui/notifications/host-context-changed", { displayMode: "fullscreen" });
+      };
 
-      loadView("inline");
+      // Load the real view unmodified.
+      fetch("views/portfolio.html").then((r) => r.text()).then((html) => { frame.srcdoc = html; });
     </script>
   </body>
 </html>
