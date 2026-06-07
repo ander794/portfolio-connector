@@ -262,6 +262,8 @@
             await loadPortfolio(pid);
           };
         });
+
+        sendSize();
       }
 
       // Extract our structured payload from a tool result.
@@ -292,6 +294,22 @@
           pending.set(id, { resolve, reject });
           window.parent.postMessage({ jsonrpc: "2.0", id, method, params: params || {} }, "*");
         });
+      }
+
+      // Report content size to the host so it sizes the iframe (else it stays
+      // collapsed and the view looks blank). Mirrors the ext-apps autoResize logic.
+      let lastW = 0, lastH = 0;
+      function sendSize() {
+        const html = document.documentElement;
+        const prev = html.style.height;
+        html.style.height = "max-content";
+        const height = Math.ceil(html.getBoundingClientRect().height);
+        html.style.height = prev;
+        const width = Math.ceil(window.innerWidth);
+        if (width !== lastW || height !== lastH) {
+          lastW = width; lastH = height;
+          notify("ui/notifications/size-changed", { width, height });
+        }
       }
 
       function applyContext(ctx) {
@@ -342,14 +360,19 @@
       (async () => {
         try {
           const result = await request("ui/initialize", {
+            protocolVersion: "2025-06-18",
             appInfo: { name: "Portfolio Insights", version: "1.0.0" },
             appCapabilities: { availableDisplayModes: ["inline", "fullscreen"] },
           });
           applyContext(result && result.hostContext);
           notify("ui/notifications/initialized", {});
           render();
+          // Keep the host informed of our size as content changes.
+          try { new ResizeObserver(sendSize).observe(document.body); } catch (e) { /* older browsers */ }
+          sendSize();
         } catch (err) {
           root.innerHTML = '<div class="loading">Couldn’t connect to host.</div>';
+          sendSize();
         }
       })();
     </script>

@@ -77,6 +77,10 @@
           } else {
             result(msg.id, { content: [], structuredContent: null });
           }
+        } else if (msg.method === "ui/notifications/size-changed") {
+          // Host sizes the iframe to the app's reported content height (inline mode).
+          window.__lastSize = msg.params;
+          if (host.mode === "inline") frame.style.height = msg.params.height + "px";
         }
       });
 
