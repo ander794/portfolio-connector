@@ -108,11 +108,13 @@ function renderFull(d) {
     <div class="grid2" style="margin-top:16px">
       <div class="card">
         <h3>Holdings</h3>
-        <table>
-          <thead><tr><th>Position</th><th>Shares</th><th>Price</th><th>Value</th>
-            <th>Weight</th><th>Day</th><th>Total</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Position</th><th>Shares</th><th>Price</th><th>Value</th>
+              <th>Weight</th><th>Day</th><th>Total</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
       </div>
       <div class="card">
         <h3>Sector allocation</h3>
