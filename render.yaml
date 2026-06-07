@@ -1,0 +1,9 @@
+# One-click free deploy on Render (https://render.com).
+# Push this repo to GitHub, then: Render Dashboard → New → Blueprint → pick the repo.
+services:
+  - type: web
+    name: portfolio-connector
+    runtime: docker
+    plan: free
+    healthCheckPath: /mcp
+    autoDeploy: true

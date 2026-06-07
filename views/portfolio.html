@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio Insights</title>
+    <style>
+      :root {
+        /* Fall back gracefully; Claude injects real theme vars via host context. */
+        --bg: #ffffff;
+        --surface: #f6f7f9;
+        --border: #e5e7eb;
+        --text: #111827;
+        --muted: #6b7280;
+        --accent: #6c5ce7;
+        --up: #12a150;
+        --down: #e5484d;
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1b1b1f;
+          --surface: #26262b;
+          --border: #34343a;
+          --text: #f3f4f6;
+          --muted: #9ca3af;
+          --up: #30c977;
+          --down: #ff6369;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        font-size: 14px;
+        line-height: 1.45;
+      }
+      .wrap { padding: 16px; }
+      .hidden { display: none !important; }
+
+      /* ---- header ---- */
+      .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+      .name { font-size: 13px; color: var(--muted); margin: 0 0 2px; font-weight: 600;
+              text-transform: uppercase; letter-spacing: .04em; }
+      .value { font-size: 30px; font-weight: 700; margin: 0; letter-spacing: -.5px; }
+      .full .value { font-size: 38px; }
+      .pill { display: inline-flex; align-items: center; gap: 5px; font-weight: 600;
+              font-size: 13px; padding: 3px 9px; border-radius: 999px; margin-top: 6px; }
+      .pill.up { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); }
+      .pill.down { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); }
+
+      button.ghost {
+        border: 1px solid var(--border); background: var(--surface); color: var(--text);
+        border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 600;
+        cursor: pointer; white-space: nowrap;
+      }
+      button.ghost:hover { border-color: var(--accent); }
+
+      /* ---- sparkline ---- */
+      .spark { width: 100%; height: 56px; margin: 14px 0 6px; display: block; }
+      .full .spark { height: 120px; }
+
+      /* ---- holdings ---- */
+      .rows { margin-top: 10px; }
+      .row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px;
+             align-items: center; padding: 9px 0; border-top: 1px solid var(--border); }
+      .row:first-child { border-top: none; }
+      .tkr { font-weight: 700; }
+      .sub { color: var(--muted); font-size: 12px; }
+      .num { text-align: right; font-variant-numeric: tabular-nums; }
+      .chg { text-align: right; font-variant-numeric: tabular-nums; min-width: 64px; font-weight: 600; }
+      .chg.up { color: var(--up); }
+      .chg.down { color: var(--down); }
+
+      /* ---- fullscreen extras ---- */
+      .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+      .tab { border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+             border-radius: 999px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+      .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+      .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+      .card { background: var(--surface); border: 1px solid var(--border);
+              border-radius: var(--radius); padding: 16px; }
+      .card h3 { margin: 0 0 12px; font-size: 13px; text-transform: uppercase;
+                 letter-spacing: .04em; color: var(--muted); }
+      .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 4px; }
+      .stat .k { color: var(--muted); font-size: 12px; }
+      .stat .v { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: right; color: var(--muted); font-size: 12px; font-weight: 600;
+           padding: 6px 8px; border-bottom: 1px solid var(--border); }
+      th:first-child { text-align: left; }
+      td { padding: 9px 8px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums;
+           text-align: right; }
+      td:first-child { text-align: left; }
+
+      .alloc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .alloc-row .lbl { width: 120px; font-size: 13px; }
+      .bar { flex: 1; height: 8px; background: var(--border); border-radius: 999px; overflow: hidden; }
+      .bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+      .alloc-row .pct { width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+      .asof { color: var(--muted); font-size: 11px; margin-top: 14px; }
+      .loading { color: var(--muted); padding: 28px; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div id="root" class="wrap"><div class="loading">Loading portfolio…</div></div>
+
+    <script type="module">
+      import { App } from "https://esm.sh/@modelcontextprotocol/ext-apps";
+
+      const app = new App({ name: "Portfolio Insights", version: "1.0.0" });
+      const root = document.getElementById("root");
+
+      const state = { data: null, mode: "inline" };
+
+      // ---- helpers ----------------------------------------------------------
+      const money = (n, ccy = "USD") =>
+        new Intl.NumberFormat("en-US", { style: "currency", currency: ccy,
+          maximumFractionDigits: 0 }).format(n);
+      const money2 = (n, ccy = "USD") =>
+        new Intl.NumberFormat("en-US", { style: "currency", currency: ccy }).format(n);
+      const pct = (n) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
+      const cls = (n) => (n >= 0 ? "up" : "down");
+      const arrow = (n) => (n >= 0 ? "▲" : "▼");
+      const esc = (s) => String(s).replace(/[&<>]/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+      function sparkline(values, w = 600, h = 120, color) {
+        if (!values || values.length < 2) return "";
+        const min = Math.min(...values), max = Math.max(...values);
+        const span = max - min || 1;
+        const pts = values.map((v, i) => {
+          const x = (i / (values.length - 1)) * w;
+          const y = h - ((v - min) / span) * (h - 8) - 4;
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        const up = values[values.length - 1] >= values[0];
+        const stroke = color || (up ? "var(--up)" : "var(--down)");
+        const area = `0,${h} ${pts.join(" ")} ${w},${h}`;
+        return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+          <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="${stroke}" stop-opacity="0.22"/>
+            <stop offset="1" stop-color="${stroke}" stop-opacity="0"/></linearGradient></defs>
+          <polygon points="${area}" fill="url(#g)"/>
+          <polyline points="${pts.join(" ")}" fill="none" stroke="${stroke}"
+            stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>`;
+      }
+
+      // ---- renderers --------------------------------------------------------
+      function renderInline(d) {
+        const top = d.holdings.slice(0, 3);
+        return `
+          <div class="head">
+            <div>
+              <p class="name">${esc(d.name)}</p>
+              <p class="value">${money2(d.totalValue, d.currency)}</p>
+              <span class="pill ${cls(d.dayChange)}">${arrow(d.dayChange)}
+                ${money(Math.abs(d.dayChange), d.currency)} (${pct(d.dayChangePct)}) today</span>
+            </div>
+            <button class="ghost" id="expand">⤢ Expand</button>
+          </div>
+          ${sparkline(d.sparkline, 600, 56)}
+          <div class="rows">
+            ${top.map((h) => `
+              <div class="row">
+                <div><div class="tkr">${esc(h.ticker)}</div>
+                  <div class="sub">${esc(h.name)} · ${h.weight}%</div></div>
+                <div class="num">${money2(h.value, d.currency)}</div>
+                <div class="chg ${cls(h.dayChangePct)}">${pct(h.dayChangePct)}</div>
+              </div>`).join("")}
+          </div>
+          <div class="asof">${d.holdings.length} holdings · tap Expand for the full breakdown</div>`;
+      }
+
+      function renderFull(d) {
+        const tabs = d.available.map((p) =>
+          `<button class="tab ${p.id === d.id ? "active" : ""}" data-pid="${p.id}">${esc(p.name)}</button>`
+        ).join("");
+        const rows = d.holdings.map((h) => `
+          <tr>
+            <td><strong>${esc(h.ticker)}</strong> <span class="sub">${esc(h.name)}</span></td>
+            <td>${h.shares}</td>
+            <td>${money2(h.price, d.currency)}</td>
+            <td>${money2(h.value, d.currency)}</td>
+            <td>${h.weight}%</td>
+            <td class="${cls(h.dayChangePct)}">${pct(h.dayChangePct)}</td>
+            <td class="${cls(h.gainPct)}">${pct(h.gainPct)}</td>
+          </tr>`).join("");
+        const alloc = d.allocation.map((a) => `
+          <div class="alloc-row">
+            <div class="lbl">${esc(a.sector)}</div>
+            <div class="bar"><span style="width:${a.weight}%"></span></div>
+            <div class="pct">${a.weight}%</div>
+          </div>`).join("");
+        return `
+          <div class="tabs">${tabs}</div>
+          <div class="head">
+            <div>
+              <p class="name">${esc(d.name)}</p>
+              <p class="value">${money2(d.totalValue, d.currency)}</p>
+              <span class="pill ${cls(d.dayChange)}">${arrow(d.dayChange)}
+                ${money(Math.abs(d.dayChange), d.currency)} (${pct(d.dayChangePct)}) today</span>
+            </div>
+            <button class="ghost" id="collapse">⤡ Minimize</button>
+          </div>
+          ${sparkline(d.sparkline, 800, 120)}
+          <div class="stats">
+            <div class="stat card"><div class="k">Total value</div>
+              <div class="v">${money2(d.totalValue, d.currency)}</div></div>
+            <div class="stat card"><div class="k">Total gain / loss</div>
+              <div class="v ${cls(d.totalGain)}">${money(d.totalGain, d.currency)} (${pct(d.totalGainPct)})</div></div>
+            <div class="stat card"><div class="k">Holdings</div>
+              <div class="v">${d.holdings.length}</div></div>
+          </div>
+          <div class="grid2" style="margin-top:16px">
+            <div class="card">
+              <h3>Holdings</h3>
+              <table>
+                <thead><tr><th>Position</th><th>Shares</th><th>Price</th><th>Value</th>
+                  <th>Weight</th><th>Day</th><th>Total</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+            <div class="card">
+              <h3>Sector allocation</h3>
+              ${alloc}
+            </div>
+          </div>
+          <div class="asof">As of ${new Date(d.asOf).toLocaleString()} · sample data</div>`;
+      }
+
+      function render() {
+        if (!state.data) return;
+        const full = state.mode === "fullscreen";
+        root.className = "wrap" + (full ? " full" : "");
+        root.innerHTML = full ? renderFull(state.data) : renderInline(state.data);
+
+        const expand = document.getElementById("expand");
+        if (expand) expand.onclick = () => app.requestDisplayMode({ mode: "fullscreen" });
+        const collapse = document.getElementById("collapse");
+        if (collapse) collapse.onclick = () => app.requestDisplayMode({ mode: "inline" });
+
+        root.querySelectorAll(".tab").forEach((t) => {
+          t.onclick = async () => {
+            const pid = t.getAttribute("data-pid");
+            if (pid === state.data.id) return;
+            t.textContent = "Loading…";
+            await loadPortfolio(pid);
+          };
+        });
+      }
+
+      // Extract our structured payload from a tool result.
+      function payloadFrom(result) {
+        if (!result) return null;
+        if (result.structuredContent) return result.structuredContent;
+        const text = result.content?.find((c) => c.type === "text")?.text;
+        if (text) { try { return JSON.parse(text); } catch { /* ignore */ } }
+        return null;
+      }
+
+      async function loadPortfolio(pid) {
+        const result = await app.callServerTool({
+          name: "show_portfolio",
+          arguments: { portfolio_id: pid },
+        });
+        const data = payloadFrom(result);
+        if (data) { state.data = data; render(); }
+      }
+
+      // ---- wire up host events ---------------------------------------------
+      app.ontoolresult = (result) => {
+        const data = payloadFrom(result);
+        if (data) { state.data = data; render(); }
+      };
+
+      app.onhostcontextchanged = (ctx) => {
+        if (ctx?.displayMode) { state.mode = ctx.displayMode; render(); }
+      };
+
+      app.connect().then(() => {
+        try {
+          const ctx = app.getHostContext?.();
+          if (ctx?.displayMode) { state.mode = ctx.displayMode; render(); }
+        } catch { /* host may not expose context yet */ }
+      });
+    </script>
+  </body>
+</html>
